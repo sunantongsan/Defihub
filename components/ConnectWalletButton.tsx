@@ -37,19 +37,34 @@ const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({ activeNetwork
     setIsSuiWalletDetected(false); // Also reset detection status
   }, [activeNetwork, onDisconnect]);
 
-  // Effect to handle the race condition for Sui wallet detection
+  // More robust Sui wallet detection to handle the race condition.
+  // Instead of a single timeout, we poll for the wallet provider.
   useEffect(() => {
-    if (activeNetwork === Network.SUI) {
-      // Use a short timeout to give the wallet extension time to inject its provider
-      const detectionTimeout = setTimeout(() => {
-        if (window.suiWallet) {
-          setIsSuiWalletDetected(true);
-        }
-      }, 500); // 500ms should be sufficient
-
-      // Cleanup the timeout if the component unmounts or the network changes
-      return () => clearTimeout(detectionTimeout);
+    if (activeNetwork !== Network.SUI) {
+      return;
     }
+
+    // Immediately check if the wallet is already available
+    if (window.suiWallet) {
+      setIsSuiWalletDetected(true);
+      return;
+    }
+
+    // If not found, poll for a short period to give the extension time to inject.
+    let attempts = 0;
+    const interval = setInterval(() => {
+      if (window.suiWallet) {
+        setIsSuiWalletDetected(true);
+        clearInterval(interval);
+      } else if (attempts >= 10) { // Poll for ~2 seconds (10 * 200ms)
+        clearInterval(interval);
+      }
+      attempts++;
+    }, 200);
+
+    // Cleanup function to clear the interval when the component unmounts or network changes
+    return () => clearInterval(interval);
+
   }, [activeNetwork]);
 
 
