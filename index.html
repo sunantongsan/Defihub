@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DeFi Multi-Chain Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'sui-blue': '#4FA8FF',
+              'iota-green': '#1DE9B6',
+              'berachain-orange': '#FF8A00',
+              'theme-yellow': '#FBBF24', // For homepage theme
+              'base-900': '#0D0D0F', // Darker base
+              'base-800': '#151518',
+              'base-700': '#242428',
+              'base-600': '#3D3D3D',
+            },
+            animation: {
+              'spin-slow': 'spin 3s linear infinite',
+              'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'aurora': 'aurora 20s ease-in-out infinite alternate',
+            },
+            keyframes: {
+              aurora: {
+                '0%': { transform: 'translateY(0%)' },
+                '100%': { transform: 'translateY(-20%)' },
+              },
+            }
+          }
+        }
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-base-900 text-white font-sans">
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

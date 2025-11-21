@@ -1,0 +1,5 @@
+{
+  "name": "DeFi Multi-Chain Hub",
+  "description": "A decentralized finance (DeFi) application that provides tools for token creation, liquidity management, swapping, and launchpad participation across the Sui, Iota, and Berachain networks.",
+  "requestFramePermissions": []
+}
