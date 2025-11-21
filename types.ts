@@ -2,7 +2,7 @@
 export enum Network {
   SUI = 'SUI',
   IOTA = 'IOTA',
-  BERACHAIN = 'BERACHAIN',
+  EVM = 'EVM',
 }
 
 export enum Feature {

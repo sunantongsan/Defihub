@@ -62,7 +62,7 @@ const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({ activeNetwork
     try {
       let accounts: string[] | undefined;
       switch (activeNetwork) {
-        case Network.BERACHAIN: // EVM Compatible
+        case Network.EVM: // EVM Compatible
           if (window.ethereum) {
             accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
           } else {

@@ -22,7 +22,7 @@ const REAL_TOKENS: { [key in Network]: Token[] } = {
     { symbol: 'IOTA', name: 'Iota', logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/iota/info/logo.png' },
     { symbol: 'USDT', name: 'Tether', logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png' },
   ],
-  [Network.BERACHAIN]: [
+  [Network.EVM]: [
     { symbol: 'BERA', name: 'Berachain', logo: 'https://artio.bex.berachain.com/bera-token.svg' },
     { symbol: 'HONEY', name: 'Honey', logo: 'https://artio.bex.berachain.com/honey-token.svg' },
   ],
@@ -65,7 +65,7 @@ const Swap: React.FC<SwapProps> = ({ network, color, isConnected, address }) => 
         // In a real app, you would use token contract addresses and ABIs to get balances.
         // For this demo, we'll simulate fetching native token balances.
         try {
-            if (network === Network.BERACHAIN || network === Network.IOTA) { // Assuming IOTA has an EVM layer
+            if (network === Network.EVM || network === Network.IOTA) { // Assuming IOTA has an EVM layer
                 const provider = new ethers.BrowserProvider(window.ethereum!);
                 const balance = await provider.getBalance(address);
                 // We'll set the native token balance for both for simplicity
@@ -98,7 +98,7 @@ const Swap: React.FC<SwapProps> = ({ network, color, isConnected, address }) => 
         // This is a DEMONSTRATION of a transaction.
         // A real swap requires interacting with a specific DEX/AMM contract.
         // We will simulate this by sending a small amount of the native currency to ourselves.
-        if (network === Network.BERACHAIN || network === Network.IOTA) {
+        if (network === Network.EVM || network === Network.IOTA) {
             const provider = new ethers.BrowserProvider(window.ethereum!);
             const signer = await provider.getSigner();
             const tx = await signer.sendTransaction({

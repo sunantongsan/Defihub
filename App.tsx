@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Network } from './types';
 import SuiDashboard from './features/sui/SuiDashboard';
 import IotaDashboard from './features/iota/IotaDashboard';
-import BerachainDashboard from './features/berachain/BerachainDashboard';
+import EvmDashboard from './features/evm/EvmDashboard';
 import ConnectWalletButton from './components/ConnectWalletButton';
 import { SuiLogo, IotaLogo, BerachainLogo } from './components/icons/ChainLogos';
 import HomePage from './HomePage';
@@ -27,9 +27,9 @@ const App: React.FC = () => {
       color: 'iota-green',
       aurora: 'bg-iota-green/30',
     },
-    [Network.BERACHAIN]: {
-      name: 'Berachain',
-      component: <BerachainDashboard isConnected={isConnected} address={address} />,
+    [Network.EVM]: {
+      name: 'EVM / Web3',
+      component: <EvmDashboard isConnected={isConnected} address={address} />,
       logo: <BerachainLogo className="h-6 w-6" />,
       color: 'berachain-orange',
       aurora: 'bg-berachain-orange/30',
