@@ -9,16 +9,16 @@ interface HomePageProps {
 
 const MOCK_PROJECTS_BY_NETWORK: { [key in Network]: LaunchpadProject[] } = {
   [Network.SUI]: [
-    { id: 'sui1', name: 'Aqua Protocol', description: 'A decentralized liquid staking protocol on Sui, allowing users to earn staking rewards while maintaining liquidity for their assets.', logo: '💧', raised: 250000, goal: 600000, tokenSymbol: 'AQUA', status: 'Live' },
-    { id: 'sui2', name: 'Sui Scape', description: 'A metaverse project building a persistent virtual world on the Sui blockchain, focused on gaming and social experiences.', logo: '🏞️', raised: 120000, goal: 1000000, tokenSymbol: 'SCAPE', status: 'Upcoming' },
+    { id: 'sui1', name: 'Aqua Protocol', description: 'A decentralized liquid staking protocol on Sui, allowing users to earn staking rewards while maintaining liquidity for their assets.', logo: 'https://cdn-icons-png.flaticon.com/512/599/599502.png', raised: 250000, goal: 600000, tokenSymbol: 'AQUA', status: 'Live' },
+    { id: 'sui2', name: 'Sui Scape', description: 'A metaverse project building a persistent virtual world on the Sui blockchain, focused on gaming and social experiences.', logo: 'https://cdn-icons-png.flaticon.com/512/3069/3069243.png', raised: 120000, goal: 1000000, tokenSymbol: 'SCAPE', status: 'Upcoming' },
   ],
   [Network.IOTA]: [
-    { id: 'iota1', name: 'Tangle Secure', description: 'A platform for decentralized identity and verifiable credentials built on the IOTA Tangle, enabling secure data sharing.', logo: '🔗', raised: 400000, goal: 500000, tokenSymbol: 'TSEC', status: 'Live' },
-    { id: 'iota2', name: 'Feel-ess Feeder', description: 'An oracle service for IoT data monetization, providing tamper-proof data streams for smart contracts via the IOTA network.', logo: '📡', raised: 950000, goal: 1000000, tokenSymbol: 'FEED', status: 'Ended' },
+    { id: 'iota1', name: 'Tangle Secure', description: 'A platform for decentralized identity and verifiable credentials built on the IOTA Tangle, enabling secure data sharing.', logo: 'https://cdn-icons-png.flaticon.com/512/1828/1828463.png', raised: 400000, goal: 500000, tokenSymbol: 'TSEC', status: 'Live' },
+    { id: 'iota2', name: 'Feel-ess Feeder', description: 'An oracle service for IoT data monetization, providing tamper-proof data streams for smart contracts via the IOTA network.', logo: 'https://cdn-icons-png.flaticon.com/512/3094/3094905.png', raised: 950000, goal: 1000000, tokenSymbol: 'FEED', status: 'Ended' },
   ],
   [Network.BERACHAIN]: [
-    { id: 'bera1', name: 'Honey Pot Finance', description: 'A gamified yield farming protocol on Berachain, where users can stake assets in "Honey Pots" to earn multiple token rewards.', logo: '🍯', raised: 80000, goal: 400000, tokenSymbol: 'POT', status: 'Live' },
-    { id: 'bera2', name: 'Cuboard Finance', description: 'A decentralized perpetuals exchange on Berachain offering leverage trading with low slippage and deep liquidity.', logo: '🐻', raised: 0, goal: 750000, tokenSymbol: 'CUB', status: 'Upcoming' },
+    { id: 'bera1', name: 'Honey Pot Finance', description: 'A gamified yield farming protocol on Berachain, where users can stake assets in "Honey Pots" to earn multiple token rewards.', logo: 'https://cdn-icons-png.flaticon.com/512/2307/2307328.png', raised: 80000, goal: 400000, tokenSymbol: 'POT', status: 'Live' },
+    { id: 'bera2', name: 'Cuboard Finance', description: 'A decentralized perpetuals exchange on Berachain offering leverage trading with low slippage and deep liquidity.', logo: 'https://cdn-icons-png.flaticon.com/512/3069/3069170.png', raised: 0, goal: 750000, tokenSymbol: 'CUB', status: 'Upcoming' },
   ],
 };
 
