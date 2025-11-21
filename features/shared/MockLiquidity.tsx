@@ -47,6 +47,10 @@ const MockLiquidity: React.FC<MockLiquidityProps> = ({ network, color, isConnect
 
     return (
         <div className="bg-base-800/40 border border-white/10 rounded-2xl p-6 flex flex-col gap-4 shadow-2xl shadow-black/20 backdrop-blur-lg shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]">
+            <div className="text-center p-3 bg-yellow-500/10 text-yellow-400 rounded-lg text-sm mb-4">
+                <strong>Note:</strong> This feature is for demonstration purposes only and does not create real transactions.
+            </div>
+            
             <h2 className="text-xl font-bold text-center">Liquidity Pool</h2>
             
             {!showPosition ? (

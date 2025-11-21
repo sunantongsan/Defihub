@@ -2,9 +2,9 @@
 import React from 'react';
 import { Network, Feature } from '../../types';
 import DashboardLayout from '../shared/DashboardLayout';
-import MockSwap from '../shared/MockSwap';
+import Swap from '../shared/Swap';
 import MockLiquidity from '../shared/MockLiquidity';
-import MockMint from '../shared/MockMint';
+import Mint from './Mint'; // Changed from MockMint
 import MockLaunchpad from '../shared/MockLaunchpad';
 
 interface SuiDashboardProps {
@@ -12,14 +12,14 @@ interface SuiDashboardProps {
   address: string | null;
 }
 
-const SuiDashboard: React.FC<SuiDashboardProps> = ({ isConnected }) => {
+const SuiDashboard: React.FC<SuiDashboardProps> = ({ isConnected, address }) => {
   const network = Network.SUI;
   const color = 'sui-blue';
   
   const features = {
-    [Feature.MINT]: <MockMint network={network} color={color} isConnected={isConnected} />,
+    [Feature.MINT]: <Mint network={network} color={color} isConnected={isConnected} address={address} />, // Use the new Mint component
     [Feature.LIQUIDITY]: <MockLiquidity network={network} color={color} isConnected={isConnected} />,
-    [Feature.SWAP]: <MockSwap network={network} color={color} isConnected={isConnected} />,
+    [Feature.SWAP]: <Swap network={network} color={color} isConnected={isConnected} address={address} />,
     [Feature.LAUNCHPAD]: <MockLaunchpad network={network} color={color} />,
   };
   

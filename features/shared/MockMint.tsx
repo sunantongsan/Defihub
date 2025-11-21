@@ -19,7 +19,7 @@ const MockMint: React.FC<MockMintProps> = ({ network, color, isConnected }) => {
         if (!name || !symbol || !supply || !isConnected) return;
         setIsLoading(true);
         setTxHash('');
-        // In a real app, you would make a contract call here to deploy a new token.
+        // In a real app, you would deploy a token contract here.
         setTimeout(() => {
             setIsLoading(false);
             setTxHash(`0x${[...Array(64)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')}`);
@@ -31,6 +31,10 @@ const MockMint: React.FC<MockMintProps> = ({ network, color, isConnected }) => {
 
     return (
         <div className="bg-base-800/40 border border-white/10 rounded-2xl p-6 flex flex-col gap-6 shadow-2xl shadow-black/20 backdrop-blur-lg shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]">
+             <div className="text-center p-3 bg-yellow-500/10 text-yellow-400 rounded-lg text-sm">
+                <strong>Note:</strong> This feature is for demonstration purposes only and does not create real transactions.
+            </div>
+            
             <h2 className="text-xl font-bold text-center">Create a new Token</h2>
             
             <div className="flex flex-col gap-4">

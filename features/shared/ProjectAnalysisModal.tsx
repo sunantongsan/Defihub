@@ -50,7 +50,7 @@ const ProjectAnalysisModal: React.FC<ProjectAnalysisModalProps> = ({ project, on
         <div className="p-6 border-b border-white/10 flex justify-between items-start">
           <div>
             <h2 className="text-2xl font-bold flex items-center gap-3">
-                <span className="text-4xl">{project.logo}</span>
+                <img src={project.logo} alt={`${project.name} logo`} className="h-10 w-10 rounded-full object-cover bg-base-700" />
                 {project.name}
             </h2>
             <p className="text-gray-400 mt-1">{project.description}</p>

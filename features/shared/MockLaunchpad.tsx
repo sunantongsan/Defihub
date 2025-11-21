@@ -9,9 +9,9 @@ interface MockLaunchpadProps {
 }
 
 const MOCK_PROJECTS: LaunchpadProject[] = [
-  { id: 'proj1', name: 'Quantum Leap', description: 'A decentralized protocol for cross-chain atomic swaps using quantum-resistant cryptography, ensuring future-proof security for asset transfers.', logo: '⚛️', raised: 150000, goal: 500000, tokenSymbol: 'QNTM', status: 'Live' },
-  { id: 'proj2', name: 'DeFi Garden', description: 'An automated yield farming aggregator that optimizes strategies across multiple liquidity pools to maximize returns for users with minimal effort.', logo: '🌱', raised: 750000, goal: 750000, tokenSymbol: 'GRDN', status: 'Ended' },
-  { id: 'proj3', name: 'Nova Oracle', description: 'A high-speed, decentralized oracle network providing reliable real-world data to smart contracts, enabling complex dApps and financial instruments.', logo: '🔮', raised: 0, goal: 1000000, tokenSymbol: 'NOVA', status: 'Upcoming' },
+  { id: 'proj1', name: 'Quantum Leap', description: 'A decentralized protocol for cross-chain atomic swaps using quantum-resistant cryptography, ensuring future-proof security for asset transfers.', logo: 'https://cdn-icons-png.flaticon.com/512/2103/2103624.png', raised: 150000, goal: 500000, tokenSymbol: 'QNTM', status: 'Live' },
+  { id: 'proj2', name: 'DeFi Garden', description: 'An automated yield farming aggregator that optimizes strategies across multiple liquidity pools to maximize returns for users with minimal effort.', logo: 'https://cdn-icons-png.flaticon.com/512/2620/2620400.png', raised: 750000, goal: 750000, tokenSymbol: 'GRDN', status: 'Ended' },
+  { id: 'proj3', name: 'Nova Oracle', description: 'A high-speed, decentralized oracle network providing reliable real-world data to smart contracts, enabling complex dApps and financial instruments.', logo: 'https://cdn-icons-png.flaticon.com/512/3198/3198889.png', raised: 0, goal: 1000000, tokenSymbol: 'NOVA', status: 'Upcoming' },
 ];
 
 const MockLaunchpad: React.FC<MockLaunchpadProps> = ({ network, color }) => {
