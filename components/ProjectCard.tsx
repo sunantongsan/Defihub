@@ -13,7 +13,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, color, actionButton 
     return (
         <div className="bg-base-800/40 border border-white/10 rounded-2xl p-5 flex flex-col gap-4 transition-all duration-300 hover:scale-[1.02] hover:border-white/20 shadow-2xl shadow-black/20 backdrop-blur-lg shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]">
             <div className="flex items-center gap-4">
-                <span className="text-4xl">{project.logo}</span>
+                <img src={project.logo} alt={`${project.name} logo`} className="h-10 w-10 rounded-full object-cover bg-base-700" />
                 <div>
                     <h3 className="font-bold text-lg text-gray-100">{project.name}</h3>
                     <p className="text-sm text-gray-400">${project.tokenSymbol}</p>
