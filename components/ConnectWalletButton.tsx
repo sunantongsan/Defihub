@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { WalletIcon, LogoutIcon } from './icons/InterfaceIcons';
 import { Network } from '../types';
 
@@ -8,8 +8,10 @@ declare global {
     ethereum?: {
         request: (args: { method: string }) => Promise<string[]>;
     };
+    // FIX: Merged suiWallet type definitions to avoid conflicts across files and to include all necessary methods. This resolves the type error on line 11 and the property access error on line 54.
     suiWallet?: {
       request: (args: { method: string }) => Promise<{ accounts: string[] }>;
+      signAndExecuteTransactionBlock: (payload: { transactionBlock: any }) => Promise<{ digest: string }>;
     };
     iotaWallet?: {
         request: (args: { method: string }) => Promise<{ accounts: string[] }>;
@@ -27,11 +29,29 @@ interface ConnectWalletButtonProps {
 
 const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({ activeNetwork, address, color, onConnect, onDisconnect }) => {
   const isConnected = !!address;
+  const [isSuiWalletDetected, setIsSuiWalletDetected] = useState(false);
   
   useEffect(() => {
     // Disconnect when network changes to ensure user connects with the right wallet for the new network
     onDisconnect();
+    setIsSuiWalletDetected(false); // Also reset detection status
   }, [activeNetwork, onDisconnect]);
+
+  // Effect to handle the race condition for Sui wallet detection
+  useEffect(() => {
+    if (activeNetwork === Network.SUI) {
+      // Use a short timeout to give the wallet extension time to inject its provider
+      const detectionTimeout = setTimeout(() => {
+        if (window.suiWallet) {
+          setIsSuiWalletDetected(true);
+        }
+      }, 500); // 500ms should be sufficient
+
+      // Cleanup the timeout if the component unmounts or the network changes
+      return () => clearTimeout(detectionTimeout);
+    }
+  }, [activeNetwork]);
+
 
   const handleConnect = async () => {
     if (!activeNetwork) {
@@ -50,11 +70,11 @@ const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({ activeNetwork
           }
           break;
         case Network.SUI:
-          if (window.suiWallet) {
+          if (isSuiWalletDetected && window.suiWallet) {
             const res = await window.suiWallet.request({ method: 'sui_requestAccounts' });
             accounts = res.accounts;
           } else {
-            alert("Please install a Sui wallet extension.");
+            alert("Sui wallet not detected. Please ensure it is installed and enabled in your browser.");
           }
           break;
         case Network.IOTA:
