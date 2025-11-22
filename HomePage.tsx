@@ -1,7 +1,7 @@
 import React from 'react';
 import { Network, LaunchpadProject } from './types';
 import ProjectCard from './components/ProjectCard';
-import { SuiLogo, BerachainLogo } from './components/icons/ChainLogos';
+import { SuiLogo, IotaLogo, BerachainLogo } from './components/icons/ChainLogos';
 
 interface HomePageProps {
   onNavigateToDashboard: (network: Network) => void;
@@ -12,6 +12,10 @@ const MOCK_PROJECTS_BY_NETWORK: { [key in Network]?: LaunchpadProject[] } = {
     { id: 'sui1', name: 'Aqua Protocol', description: 'A decentralized liquid staking protocol on Sui, allowing users to earn staking rewards while maintaining liquidity for their assets.', logo: 'https://cdn-icons-png.flaticon.com/512/599/599502.png', raised: 250000, goal: 600000, tokenSymbol: 'AQUA', status: 'Live' },
     { id: 'sui2', name: 'Sui Scape', description: 'A metaverse project building a persistent virtual world on the Sui blockchain, focused on gaming and social experiences.', logo: 'https://cdn-icons-png.flaticon.com/512/3069/3069243.png', raised: 120000, goal: 1000000, tokenSymbol: 'SCAPE', status: 'Upcoming' },
   ],
+  [Network.IOTA]: [
+    { id: 'iota1', name: 'Tangle Swap', description: 'A next-generation DEX built on the IOTA Tangle, offering feeless trades and parallel transaction processing.', logo: 'https://cdn-icons-png.flaticon.com/512/3997/3997705.png', raised: 450000, goal: 1000000, tokenSymbol: 'TNG', status: 'Live' },
+    { id: 'iota2', name: 'Feeless NFT', description: 'A marketplace for creating and trading NFTs on IOTA with zero minting fees and instant settlement.', logo: 'https://cdn-icons-png.flaticon.com/512/8133/8133722.png', raised: 90000, goal: 250000, tokenSymbol: 'FNFT', status: 'Upcoming' },
+  ],
   [Network.EVM]: [
     { id: 'bera1', name: 'Honey Pot Finance', description: 'A gamified yield farming protocol on Berachain, where users can stake assets in "Honey Pots" to earn multiple token rewards.', logo: 'https://cdn-icons-png.flaticon.com/512/2307/2307328.png', raised: 80000, goal: 400000, tokenSymbol: 'POT', status: 'Live' },
     { id: 'bera2', name: 'Cuboard Finance', description: 'A decentralized perpetuals exchange on Berachain offering leverage trading with low slippage and deep liquidity.', logo: 'https://cdn-icons-png.flaticon.com/512/3069/3069170.png', raised: 0, goal: 750000, tokenSymbol: 'CUB', status: 'Upcoming' },
@@ -20,10 +24,22 @@ const MOCK_PROJECTS_BY_NETWORK: { [key in Network]?: LaunchpadProject[] } = {
 
 const networkDisplayConfig = {
     [Network.SUI]: { logo: <SuiLogo className="h-8 w-8" />, color: 'sui-blue', name: 'Sui' },
+    [Network.IOTA]: { logo: <IotaLogo className="h-8 w-8" />, color: 'iota-green', name: 'IOTA' },
     [Network.EVM]: { logo: <BerachainLogo className="h-8 w-8" />, color: 'berachain-orange', name: 'EVM / Web3' }
 };
 
 const HomePage: React.FC<HomePageProps> = ({ onNavigateToDashboard }) => {
+  const headerBgClass: { [key: string]: string } = {
+    'sui-blue': 'bg-sui-blue',
+    'iota-green': 'bg-iota-green',
+    'berachain-orange': 'bg-berachain-orange',
+  };
+  const actionButtonClass: { [key: string]: string } = {
+    'sui-blue': 'bg-sui-blue/20 hover:bg-sui-blue/30 text-sui-blue',
+    'iota-green': 'bg-iota-green/20 hover:bg-iota-green/30 text-iota-green',
+    'berachain-orange': 'bg-berachain-orange/20 hover:bg-berachain-orange/30 text-berachain-orange',
+  };
+
   return (
     <div className="container mx-auto py-12 px-4">
       <div className="text-center mb-16">
@@ -35,8 +51,8 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigateToDashboard }) => {
         {(Object.keys(networkDisplayConfig) as Network[]).map((network) => (
           <section key={network} aria-labelledby={`${network}-heading`}>
             <div className="relative pl-6 mb-8">
-               <div className={`absolute left-0 top-0 h-full w-1 bg-${networkDisplayConfig[network].color} rounded-full`}></div>
-               <div className={`absolute left-0 top-0 h-full w-1 bg-${networkDisplayConfig[network].color} rounded-full blur-md`}></div>
+               <div className={`absolute left-0 top-0 h-full w-1 ${headerBgClass[networkDisplayConfig[network].color]} rounded-full`}></div>
+               <div className={`absolute left-0 top-0 h-full w-1 ${headerBgClass[networkDisplayConfig[network].color]} rounded-full blur-md`}></div>
 
               {/* FIX: Corrected variable name from networkDisplay to networkDisplayConfig and completed the component structure. */}
               <div className="flex items-center gap-4">
@@ -53,7 +69,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigateToDashboard }) => {
                         actionButton={
                             <button 
                                 onClick={() => onNavigateToDashboard(network)}
-                                className={`w-full mt-2 bg-${networkDisplayConfig[network].color}/20 hover:bg-${networkDisplayConfig[network].color}/30 text-${networkDisplayConfig[network].color} font-semibold py-2 rounded-lg transition-colors`}
+                                className={`w-full mt-2 font-semibold py-2 rounded-lg transition-colors ${actionButtonClass[networkDisplayConfig[network].color]}`}
                             >
                                 Explore on {networkDisplayConfig[network].name}
                             </button>

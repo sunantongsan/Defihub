@@ -13,6 +13,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ network, features, co
   const [activeFeature, setActiveFeature] = useState<Feature>(Feature.SWAP);
   const featureList = Object.values(Feature);
 
+  const activeFeatureButtonStyles: { [key: string]: string } = {
+    'sui-blue': 'bg-sui-blue text-black shadow-lg shadow-sui-blue/30',
+    'iota-green': 'bg-iota-green text-black shadow-lg shadow-iota-green/30',
+    'berachain-orange': 'bg-berachain-orange text-black shadow-lg shadow-berachain-orange/30',
+  };
+
   return (
     <div className="flex flex-col gap-8">
       <div className="bg-base-900/50 border border-white/10 rounded-full p-1.5 self-center backdrop-blur-lg">
@@ -23,7 +29,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ network, features, co
               onClick={() => setActiveFeature(feature)}
               className={`px-4 sm:px-6 py-2 rounded-full text-sm sm:text-base font-semibold transition-all duration-300 ${
                 activeFeature === feature
-                  ? `bg-${color} text-black shadow-lg shadow-${color}/30`
+                  ? activeFeatureButtonStyles[color]
                   : 'text-gray-300 hover:bg-base-700/50'
               }`}
             >

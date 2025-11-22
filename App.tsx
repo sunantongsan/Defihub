@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { Network } from './types';
 import SuiDashboard from './features/sui/SuiDashboard';
+import IotaDashboard from './features/iota/IotaDashboard';
 import EvmDashboard from './features/evm/EvmDashboard';
 import ConnectWalletButton from './components/ConnectWalletButton';
-import { SuiLogo, BerachainLogo } from './components/icons/ChainLogos';
+import { SuiLogo, IotaLogo, BerachainLogo } from './components/icons/ChainLogos';
 import HomePage from './HomePage';
 
 const App: React.FC = () => {
@@ -19,6 +20,13 @@ const App: React.FC = () => {
       color: 'sui-blue',
       aurora: 'bg-sui-blue/30',
     },
+    [Network.IOTA]: {
+      name: 'IOTA',
+      component: <IotaDashboard isConnected={isConnected} address={address} />,
+      logo: <IotaLogo className="h-6 w-6" />,
+      color: 'iota-green',
+      aurora: 'bg-iota-green/30',
+    },
     [Network.EVM]: {
       name: 'EVM / Web3',
       component: <EvmDashboard isConnected={isConnected} address={address} />,
@@ -28,6 +36,18 @@ const App: React.FC = () => {
     },
   }), [isConnected, address]);
   
+  const activeNavButtonStyles: { [key: string]: string } = {
+    'sui-blue': 'bg-sui-blue text-black shadow-md shadow-sui-blue/30',
+    'iota-green': 'bg-iota-green text-black shadow-md shadow-iota-green/30',
+    'berachain-orange': 'bg-berachain-orange text-black shadow-md shadow-berachain-orange/30',
+  };
+
+  const networkTagStyles: { [key: string]: string } = {
+    'sui-blue': 'bg-sui-blue/20 text-sui-blue',
+    'iota-green': 'bg-iota-green/20 text-iota-green',
+    'berachain-orange': 'bg-berachain-orange/20 text-berachain-orange',
+  };
+
   const currentDisplay = activeNetwork ? networkConfig[activeNetwork] : null;
 
   return (
@@ -47,7 +67,7 @@ const App: React.FC = () => {
           <button onClick={() => setActiveNetwork(null)} className="text-xl font-bold flex items-center gap-3 group">
             <span className="text-xl bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 group-hover:from-white group-hover:to-white transition-all">DeFi Hub</span>
             {currentDisplay && (
-              <span className={`px-2 py-1 rounded text-xs bg-${currentDisplay.color}/20 text-${currentDisplay.color}`}>
+              <span className={`px-2 py-1 rounded text-xs ${networkTagStyles[currentDisplay.color]}`}>
                 {currentDisplay.name}
               </span>
             )}
@@ -60,7 +80,7 @@ const App: React.FC = () => {
                 title={networkConfig[network].name}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold transition-all duration-300 ${
                   activeNetwork === network
-                    ? `bg-${networkConfig[network].color} text-black shadow-md shadow-${networkConfig[network].color}/30`
+                    ? activeNavButtonStyles[networkConfig[network].color]
                     : 'text-gray-400 hover:bg-base-700/50 hover:text-white'
                 }`}
               >

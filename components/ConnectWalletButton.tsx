@@ -117,6 +117,9 @@ const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({ activeNetwork
         if (accounts && accounts.length > 0) {
           onConnect(accounts[0]);
         }
+      } else if (activeNetwork === Network.IOTA) {
+        alert("IOTA wallet connection is for demonstration purposes only.");
+        onConnect(`iota1qpm...${Math.random().toString(36).substring(2, 6)}`);
       }
 
     } catch (error) {
@@ -136,6 +139,8 @@ const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({ activeNetwork
       if (web3Modal) {
         await web3Modal.disconnect();
       }
+    } else if (activeNetwork === Network.IOTA) {
+      // No real disconnect needed for mock
     }
     onDisconnect();
   };
@@ -144,6 +149,7 @@ const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({ activeNetwork
   
   const colorClasses: { [key: string]: string } = {
     'sui-blue': 'from-sui-blue to-blue-400 hover:from-sui-blue/90 hover:to-blue-400/90',
+    'iota-green': 'from-iota-green to-green-400 hover:from-iota-green/90 hover:to-green-400/90',
     'berachain-orange': 'from-berachain-orange to-orange-400 hover:from-berachain-orange/90 hover:to-orange-400/90',
     'theme-yellow': 'from-theme-yellow to-amber-400 hover:from-theme-yellow/90 hover:to-amber-400/90'
   };

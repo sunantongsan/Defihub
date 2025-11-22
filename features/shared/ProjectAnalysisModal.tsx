@@ -34,8 +34,12 @@ const ProjectAnalysisModal: React.FC<ProjectAnalysisModalProps> = ({ project, on
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project]);
   
+  const textColorClass = { 'sui-blue': 'text-sui-blue', 'iota-green': 'text-iota-green', 'berachain-orange': 'text-berachain-orange' }[color] || 'text-gray-500';
+  const bgColorClass = { 'sui-blue': 'bg-sui-blue', 'iota-green': 'bg-iota-green', 'berachain-orange': 'bg-berachain-orange' }[color] || 'bg-gray-500';
+  const strongTextColorClass = { 'sui-blue': 'font-bold text-sui-blue', 'iota-green': 'font-bold text-iota-green', 'berachain-orange': 'font-bold text-berachain-orange' }[color] || 'font-bold';
+
   const formattedAnalysis = analysis.split('**').map((part, index) => 
-    index % 2 === 1 ? <strong key={index} className={`font-bold text-${color}`}>{part}</strong> : part
+    index % 2 === 1 ? <strong key={index} className={strongTextColorClass}>{part}</strong> : part
   ).reduce((acc, curr, index) => {
       if(typeof curr === 'string') {
           return [...acc, ...curr.split('\n').map((line, i) => <p key={`${index}-${i}`}>{line}</p>)]
@@ -60,7 +64,7 @@ const ProjectAnalysisModal: React.FC<ProjectAnalysisModalProps> = ({ project, on
         
         <div className="p-6 overflow-y-auto flex-grow">
           <h3 className="font-semibold text-lg flex items-center gap-2 mb-4">
-            <SparklesIcon className={`w-6 h-6 text-${color}`} />
+            <SparklesIcon className={`w-6 h-6 ${textColorClass}`} />
             AI Project Analysis
           </h3>
           {isLoading && (
@@ -80,7 +84,7 @@ const ProjectAnalysisModal: React.FC<ProjectAnalysisModalProps> = ({ project, on
         <div className="p-4 border-t border-white/10 bg-black/20 rounded-b-2xl">
             <button 
                 onClick={onClose} 
-                className={`w-full bg-${color} text-black font-bold py-3 rounded-xl text-lg transition-all duration-300 transform hover:scale-[1.02] hover:opacity-90`}
+                className={`w-full ${bgColorClass} text-black font-bold py-3 rounded-xl text-lg transition-all duration-300 transform hover:scale-[1.02] hover:opacity-90`}
             >
                 Close
             </button>

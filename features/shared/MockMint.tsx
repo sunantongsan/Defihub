@@ -29,6 +29,9 @@ const MockMint: React.FC<MockMintProps> = ({ network, color, isConnected }) => {
         }, 2000);
     };
 
+    const ringColorClass = { 'sui-blue': 'focus:ring-sui-blue', 'iota-green': 'focus:ring-iota-green', 'berachain-orange': 'focus:ring-berachain-orange' }[color] || 'focus:ring-gray-500';
+    const bgColorClass = { 'sui-blue': 'bg-sui-blue', 'iota-green': 'bg-iota-green', 'berachain-orange': 'bg-berachain-orange' }[color] || 'bg-gray-500';
+
     return (
         <div className="bg-base-800/40 border border-white/10 rounded-2xl p-6 flex flex-col gap-6 shadow-2xl shadow-black/20 backdrop-blur-lg shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]">
              <div className="text-center p-3 bg-yellow-500/10 text-yellow-400 rounded-lg text-sm">
@@ -40,15 +43,15 @@ const MockMint: React.FC<MockMintProps> = ({ network, color, isConnected }) => {
             <div className="flex flex-col gap-4">
                 <div>
                     <label className="text-sm text-gray-400">Token Name</label>
-                    <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. My Awesome Token" className={`w-full bg-black/30 border border-white/5 p-3 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-${color}`} />
+                    <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. My Awesome Token" className={`w-full bg-black/30 border border-white/5 p-3 rounded-lg mt-1 outline-none focus:ring-2 ${ringColorClass}`} />
                 </div>
                  <div>
                     <label className="text-sm text-gray-400">Token Symbol</label>
-                    <input type="text" value={symbol} onChange={(e) => setSymbol(e.target.value.toUpperCase())} placeholder="e.g. MAT" className={`w-full bg-black/30 border border-white/5 p-3 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-${color}`} />
+                    <input type="text" value={symbol} onChange={(e) => setSymbol(e.target.value.toUpperCase())} placeholder="e.g. MAT" className={`w-full bg-black/30 border border-white/5 p-3 rounded-lg mt-1 outline-none focus:ring-2 ${ringColorClass}`} />
                 </div>
                 <div>
                     <label className="text-sm text-gray-400">Total Supply</label>
-                    <input type="number" value={supply} onChange={(e) => setSupply(e.target.value)} placeholder="e.g. 1000000" className={`w-full bg-black/30 border border-white/5 p-3 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-${color}`} />
+                    <input type="number" value={supply} onChange={(e) => setSupply(e.target.value)} placeholder="e.g. 1000000" className={`w-full bg-black/30 border border-white/5 p-3 rounded-lg mt-1 outline-none focus:ring-2 ${ringColorClass}`} />
                 </div>
             </div>
 
@@ -56,7 +59,7 @@ const MockMint: React.FC<MockMintProps> = ({ network, color, isConnected }) => {
                 onClick={handleMint}
                 disabled={isLoading || !name || !symbol || !supply || !isConnected}
                 title={!isConnected ? "Please connect your wallet first" : ""}
-                className={`w-full bg-${color} text-black font-bold py-3 rounded-xl text-lg transition-all duration-300 disabled:bg-base-600 disabled:text-gray-500 flex items-center justify-center gap-2 transform hover:scale-[1.02] disabled:transform-none`}
+                className={`w-full ${bgColorClass} text-black font-bold py-3 rounded-xl text-lg transition-all duration-300 disabled:bg-base-600 disabled:text-gray-500 flex items-center justify-center gap-2 transform hover:scale-[1.02] disabled:transform-none`}
             >
                 {isLoading ? <><LoadingSpinner className="h-6 w-6" /> Minting...</> : isConnected ? 'Mint Token' : 'Connect Wallet'}
             </button>

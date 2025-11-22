@@ -4,6 +4,7 @@ import { getWallets } from '@mysten/wallet-standard';
 import { TransactionBlock } from '@mysten/sui.js/transactions';
 import { Network, Token } from '../../types';
 import { ArrowDownIcon, LoadingSpinner, ChevronDownIcon } from '../../components/icons/InterfaceIcons';
+import TokenSelectionModal from '../../components/TokenSelectionModal';
 
 interface SwapProps {
   network: Network;
@@ -12,17 +13,20 @@ interface SwapProps {
   address: string | null;
 }
 
-// NOTE: In a real-world app, these would come from a token list or API.
-// Using placeholder contract addresses for demonstration.
 const REAL_TOKENS: { [key in Network]: Token[] } = {
   [Network.SUI]: [
     { symbol: 'SUI', name: 'Sui', logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/sui/info/logo.png' },
     { symbol: 'USDC', name: 'USD Coin', logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png' },
+    { symbol: 'WETH', name: 'Wrapped Ether', logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png' },
   ],
-  // FIX: Property 'IOTA' does not exist on type 'typeof Network'. Removed IOTA entry.
+  [Network.IOTA]: [
+    { symbol: 'IOTA', name: 'IOTA', logo: 'https://files.iota.org/media/smr_logo_dark.png' },
+    { symbol: 'USDT', name: 'Tether', logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png' },
+  ],
   [Network.EVM]: [
     { symbol: 'BERA', name: 'Berachain', logo: 'https://artio.bex.berachain.com/bera-token.svg' },
     { symbol: 'HONEY', name: 'Honey', logo: 'https://artio.bex.berachain.com/honey-token.svg' },
+    { symbol: 'ETH', name: 'Ethereum', logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png' },
   ],
 };
 
@@ -30,11 +34,14 @@ const REAL_TOKENS: { [key in Network]: Token[] } = {
 const Swap: React.FC<SwapProps> = ({ network, color, isConnected, address }) => {
   const [fromAmount, setFromAmount] = useState('');
   const [toAmount, setToAmount] = useState('');
-  const [fromBalance, setFromBalance] = useState('0.0');
-  const [toBalance, setToBalance] = useState('0.0');
+  const [fromBalance, setFromBalance] = useState<string | null>(null);
+  const [toBalance, setToBalance] = useState<string | null>(null);
   const [status, setStatus] = useState<'idle' | 'loading' | 'signing' | 'sending' | 'success' | 'error'>('idle');
   const [txHash, setTxHash] = useState('');
   const [error, setError] = useState('');
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<'from' | 'to' | null>(null);
 
   const tokens = useMemo(() => REAL_TOKENS[network], [network]);
   const [fromToken, setFromToken] = useState<Token>(tokens[0]);
@@ -60,19 +67,16 @@ const Swap: React.FC<SwapProps> = ({ network, color, isConnected, address }) => 
     }
 
     const fetchBalances = async () => {
-        // In a real app, you would use token contract addresses and ABIs to get balances.
-        // For this demo, we'll simulate fetching native token balances.
+        setFromBalance(null); // Set to null to indicate loading
+        setToBalance(null);
         try {
-            // FIX: Property 'IOTA' does not exist on type 'typeof Network'. Removed IOTA from condition.
-            if (network === Network.EVM) { // Assuming IOTA has an EVM layer
-                // FIX: Property 'ethereum' does not exist on type 'Window & typeof globalThis'. Cast window to any.
+            if (network === Network.EVM) { 
                 const provider = new ethers.BrowserProvider((window as any).ethereum!);
                 const balance = await provider.getBalance(address);
-                // We'll set the native token balance for both for simplicity
                 setFromBalance(ethers.formatEther(balance).substring(0, 6));
-                setToBalance((Math.random() * 1000).toFixed(2)); // Mock other token balance
-            } else if (network === Network.SUI) {
-                // Sui balance fetching would require a Sui RPC client
+                setToBalance((Math.random() * 1000).toFixed(2));
+            } else if (network === Network.SUI || network === Network.IOTA) {
+                await new Promise(res => setTimeout(res, 500)); // Simulate fetch delay for Sui and IOTA
                 setFromBalance((Math.random() * 100).toFixed(2));
                 setToBalance((Math.random() * 1000).toFixed(2));
             }
@@ -86,6 +90,35 @@ const Swap: React.FC<SwapProps> = ({ network, color, isConnected, address }) => 
     fetchBalances();
   }, [isConnected, address, network, fromToken, toToken]);
 
+  const handleOpenModal = (type: 'from' | 'to') => {
+    setModalType(type);
+    setIsModalOpen(true);
+  };
+
+  const handleSelectToken = (token: Token) => {
+    if (modalType === 'from') {
+      if (token.symbol === toToken.symbol) {
+        setToToken(fromToken); // Swap them
+      }
+      setFromToken(token);
+    } else if (modalType === 'to') {
+      if (token.symbol === fromToken.symbol) {
+        setFromToken(toToken); // Swap them
+      }
+      setToToken(token);
+    }
+    setIsModalOpen(false);
+    setModalType(null);
+  };
+
+  const handleSwapTokens = () => {
+    const tempToken = fromToken;
+    const tempAmount = fromAmount;
+    setFromToken(toToken);
+    setToToken(tempToken);
+    setFromAmount(toAmount);
+    setToAmount(tempAmount);
+  };
 
   const handleSwap = async () => {
     if (!fromAmount || parseFloat(fromAmount) <= 0 || !isConnected || !address) return;
@@ -95,22 +128,16 @@ const Swap: React.FC<SwapProps> = ({ network, color, isConnected, address }) => 
     setError('');
 
     try {
-        // This is a DEMONSTRATION of a transaction.
-        // A real swap requires interacting with a specific DEX/AMM contract.
-        // We will simulate this by sending a small amount of the native currency to ourselves.
-        // FIX: Property 'IOTA' does not exist on type 'typeof Network'. Removed IOTA from condition.
         if (network === Network.EVM) {
-            // FIX: Property 'ethereum' does not exist on type 'Window & typeof globalThis'. Cast window to any.
             const provider = new ethers.BrowserProvider((window as any).ethereum!);
             const signer = await provider.getSigner();
             const tx = await signer.sendTransaction({
                 to: address,
-                value: ethers.parseEther("0.0001") // Send a tiny amount for demo
+                value: ethers.parseEther("0.0001")
             });
             setStatus('sending');
             await tx.wait();
             setTxHash(tx.hash);
-
         } else if (network === Network.SUI) {
              const walletsApi = getWallets();
              const suiWallets = walletsApi.get();
@@ -120,7 +147,6 @@ const Swap: React.FC<SwapProps> = ({ network, color, isConnected, address }) => 
              if (!wallet) throw new Error("Could not find the connected wallet.");
 
              const txb = new TransactionBlock();
-             // 1 SUI = 1,000,000,000 MIST. We send 1000 MIST for the demo.
              const [coin] = txb.splitCoins(txb.gas, [txb.pure(1000)]); 
              txb.transferObjects([coin], txb.pure(address));
              
@@ -130,6 +156,10 @@ const Swap: React.FC<SwapProps> = ({ network, color, isConnected, address }) => 
                 transactionBlock: txb,
              });
              setTxHash(digest);
+        } else if (network === Network.IOTA) {
+            setStatus('sending');
+            await new Promise(res => setTimeout(res, 1500)); // Simulate transaction
+            setTxHash(`iota_mock_swap_${[...Array(64)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')}`);
         }
         
         setStatus('success');
@@ -147,7 +177,7 @@ const Swap: React.FC<SwapProps> = ({ network, color, isConnected, address }) => 
     setFromAmount(value);
     const numValue = parseFloat(value);
     if (!isNaN(numValue) && numValue > 0) {
-      setToAmount((numValue * 1234.56).toFixed(2)); // Simulate price rate
+      setToAmount((numValue * 1234.56).toFixed(2));
     } else {
       setToAmount('');
     }
@@ -161,9 +191,28 @@ const Swap: React.FC<SwapProps> = ({ network, color, isConnected, address }) => 
     error: 'Try Again',
     loading: 'Loading...',
   };
+  
+  const bgColorClass = { 'sui-blue': 'bg-sui-blue', 'iota-green': 'bg-iota-green', 'berachain-orange': 'bg-berachain-orange' }[color] || 'bg-gray-500';
+  const textColorClass = { 'sui-blue': 'text-sui-blue', 'iota-green': 'text-iota-green', 'berachain-orange': 'text-berachain-orange' }[color] || 'text-gray-500';
+
+  const BalanceDisplay: React.FC<{ balance: string | null }> = ({ balance }) => {
+    return (
+        <span className="text-gray-400 text-sm flex items-center gap-1">
+            Balance: {balance === null ? <LoadingSpinner className="h-4 w-4" /> : balance}
+        </span>
+    );
+  };
 
   return (
-    <div className="bg-base-800/40 border border-white/10 rounded-2xl p-6 flex flex-col gap-4 shadow-2xl shadow-black/20 backdrop-blur-lg shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]">
+    <>
+      <TokenSelectionModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSelect={handleSelectToken}
+        tokens={tokens}
+        network={network}
+      />
+      <div className="bg-base-800/40 border border-white/10 rounded-2xl p-6 flex flex-col gap-4 shadow-2xl shadow-black/20 backdrop-blur-lg shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]">
        <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold">Swap</h2>
         <span className="text-xs text-gray-400">on {network}</span>
@@ -172,7 +221,7 @@ const Swap: React.FC<SwapProps> = ({ network, color, isConnected, address }) => 
       <div className="bg-black/30 p-4 rounded-xl border border-white/5">
         <div className="flex justify-between items-end">
           <span className="text-gray-400 text-sm">You pay</span>
-          <span className="text-gray-400 text-sm">Balance: {fromBalance}</span>
+          <BalanceDisplay balance={fromBalance} />
         </div>
         <div className="flex justify-between items-center mt-2">
           <input
@@ -182,7 +231,7 @@ const Swap: React.FC<SwapProps> = ({ network, color, isConnected, address }) => 
             onChange={(e) => handleAmountChange(e.target.value)}
             className="bg-transparent text-3xl font-bold w-full outline-none"
           />
-          <button className="flex items-center gap-2 bg-base-700/50 p-2 rounded-full hover:bg-base-700/80 transition-colors">
+          <button onClick={() => handleOpenModal('from')} className="flex items-center gap-2 bg-base-700/50 p-2 rounded-full hover:bg-base-700/80 transition-colors">
             <img src={fromToken.logo} alt={`${fromToken.name} logo`} className="h-6 w-6 rounded-full" />
             <span className="font-semibold">{fromToken.symbol}</span>
             <ChevronDownIcon className="h-5 w-5 text-gray-400" />
@@ -191,7 +240,7 @@ const Swap: React.FC<SwapProps> = ({ network, color, isConnected, address }) => 
       </div>
       
       <div className="flex justify-center -my-6 z-10">
-        <button className={`bg-base-700 p-2 rounded-full border-4 border-base-800/80 text-${color} hover:rotate-180 transition-transform duration-300`} aria-label="Swap tokens">
+        <button onClick={handleSwapTokens} className={`bg-base-700 p-2 rounded-full border-4 border-base-800/80 ${textColorClass} hover:rotate-180 transition-transform duration-300`} aria-label="Swap tokens">
           <ArrowDownIcon className="h-6 w-6" />
         </button>
       </div>
@@ -199,7 +248,7 @@ const Swap: React.FC<SwapProps> = ({ network, color, isConnected, address }) => 
       <div className="bg-black/30 p-4 rounded-xl border border-white/5">
         <div className="flex justify-between items-end">
           <span className="text-gray-400 text-sm">You receive</span>
-          <span className="text-gray-400 text-sm">Balance: {toBalance}</span>
+          <BalanceDisplay balance={toBalance} />
         </div>
         <div className="flex justify-between items-center mt-2">
           <input
@@ -209,7 +258,7 @@ const Swap: React.FC<SwapProps> = ({ network, color, isConnected, address }) => 
             readOnly
             className="bg-transparent text-3xl font-bold w-full outline-none text-gray-400"
           />
-           <button className="flex items-center gap-2 bg-base-700/50 p-2 rounded-full hover:bg-base-700/80 transition-colors">
+           <button onClick={() => handleOpenModal('to')} className="flex items-center gap-2 bg-base-700/50 p-2 rounded-full hover:bg-base-700/80 transition-colors">
             <img src={toToken.logo} alt={`${toToken.name} logo`} className="h-6 w-6 rounded-full" />
             <span className="font-semibold">{toToken.symbol}</span>
             <ChevronDownIcon className="h-5 w-5 text-gray-400" />
@@ -221,7 +270,7 @@ const Swap: React.FC<SwapProps> = ({ network, color, isConnected, address }) => 
         onClick={handleSwap}
         disabled={status === 'signing' || status === 'sending' || !fromAmount || !isConnected}
         title={!isConnected ? "Please connect your wallet first" : ""}
-        className={`w-full bg-${color} text-black font-bold py-4 rounded-xl text-lg transition-all duration-300 disabled:bg-base-600 disabled:text-gray-500 disabled:cursor-not-allowed hover:opacity-90 flex items-center justify-center gap-2 transform hover:scale-[1.02] disabled:transform-none`}
+        className={`w-full ${bgColorClass} text-black font-bold py-4 rounded-xl text-lg transition-all duration-300 disabled:bg-base-600 disabled:text-gray-500 disabled:cursor-not-allowed hover:opacity-90 flex items-center justify-center gap-2 transform hover:scale-[1.02] disabled:transform-none`}
       >
         {(status === 'signing' || status === 'sending') && <LoadingSpinner className="h-6 w-6" />}
         {statusMessages[status]}
@@ -239,6 +288,7 @@ const Swap: React.FC<SwapProps> = ({ network, color, isConnected, address }) => 
         </div>
       )}
     </div>
+    </>
   );
 };
 

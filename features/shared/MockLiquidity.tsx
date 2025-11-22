@@ -44,6 +44,8 @@ const MockLiquidity: React.FC<MockLiquidityProps> = ({ network, color, isConnect
     // In a real app, you would fetch the user's positions from the blockchain.
     // We'll just show the "Add" form if they are not connected.
     const showPosition = isConnected && hasPosition;
+    
+    const bgColorClass = { 'sui-blue': 'bg-sui-blue', 'iota-green': 'bg-iota-green', 'berachain-orange': 'bg-berachain-orange' }[color] || 'bg-gray-500';
 
     return (
         <div className="bg-base-800/40 border border-white/10 rounded-2xl p-6 flex flex-col gap-4 shadow-2xl shadow-black/20 backdrop-blur-lg shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]">
@@ -75,7 +77,7 @@ const MockLiquidity: React.FC<MockLiquidityProps> = ({ network, color, isConnect
                                 onClick={handleAddLiquidity}
                                 disabled={isLoading || !amountA || !amountB || !isConnected}
                                 title={!isConnected ? "Please connect your wallet first" : ""}
-                                className={`w-full bg-${color} text-black font-bold py-3 rounded-xl text-lg transition-all duration-300 disabled:bg-base-600 disabled:text-gray-500 flex items-center justify-center gap-2 transform hover:scale-[1.02] disabled:transform-none`}
+                                className={`w-full ${bgColorClass} text-black font-bold py-3 rounded-xl text-lg transition-all duration-300 disabled:bg-base-600 disabled:text-gray-500 flex items-center justify-center gap-2 transform hover:scale-[1.02] disabled:transform-none`}
                             >
                                 {isLoading ? <><LoadingSpinner className="h-6 w-6" /> Adding...</> : 'Add Liquidity'}
                             </button>
