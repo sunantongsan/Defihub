@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Network } from './types';
 import SuiDashboard from './features/sui/SuiDashboard';
 import IotaDashboard from './features/iota/IotaDashboard';
@@ -7,7 +7,7 @@ import ConnectWalletButton from './components/ConnectWalletButton';
 import SuiWalletSelectorModal from './components/SuiWalletSelectorModal';
 import { SuiLogo, IotaLogo, BerachainLogo } from './components/icons/ChainLogos';
 import HomePage from './HomePage';
-import { getWallets } from '@mysten/wallet-standard';
+import { getWallets, Wallet } from '@mysten/wallet-standard';
 import { createWeb3Modal, defaultConfig } from '@web3modal/ethers';
 
 // 1. Get a project ID from https://cloud.walletconnect.com
@@ -30,7 +30,22 @@ const App: React.FC = () => {
   const [activeNetwork, setActiveNetwork] = useState<Network | null>(null);
   const [address, setAddress] = useState<string | null>(null);
   const [isSuiModalOpen, setIsSuiModalOpen] = useState(false);
+  const [suiWallet, setSuiWallet] = useState<Wallet | null>(null);
   const isConnected = !!address;
+
+  // Auto-reconnect effect for Sui
+  useEffect(() => {
+    if (activeNetwork === Network.SUI && !suiWallet) {
+        const { get } = getWallets();
+        const wallets = get();
+        const connectedWallet = wallets.find(w => w.accounts.length > 0);
+        if (connectedWallet) {
+            setSuiWallet(connectedWallet);
+            setAddress(connectedWallet.accounts[0].address);
+        }
+    }
+  }, [activeNetwork, suiWallet]);
+
 
   const handleConnect = async (network: Network) => {
     try {
@@ -56,33 +71,51 @@ const App: React.FC = () => {
   };
   
   const handleSuiSelectAndConnect = async (walletName: string) => {
+    setIsSuiModalOpen(false);
     try {
-        const walletsApi = getWallets();
-        const suiWallets = walletsApi.get();
-        const wallet = suiWallets.find(w => w.name === walletName);
+        const { get } = getWallets();
+        const wallets = get();
+        const wallet = wallets.find(w => w.name === walletName);
+
         if (!wallet) {
             throw new Error(`Wallet ${walletName} not found.`);
         }
-        await wallet.features['sui:connect'].connect();
-        const accounts = wallet.accounts.map(acc => acc.address);
-        if (accounts && accounts.length > 0) {
-            setAddress(accounts[0]);
+
+        // Check if already connected
+        if (wallet.accounts.length > 0) {
+            setSuiWallet(wallet);
+            setAddress(wallet.accounts[0].address);
+            return;
         }
-        setIsSuiModalOpen(false);
+
+        const connectFeature = wallet.features['sui:connect'];
+        if (!connectFeature) {
+             throw new Error(`The selected wallet "${wallet.name}" does not support the required connection standard.`);
+        }
+
+        // Use the modern, correct connection method that returns accounts.
+        const { accounts } = await connectFeature.connect();
+
+        if (accounts && accounts.length > 0) {
+            setSuiWallet(wallet);
+            setAddress(accounts[0].address);
+        } else {
+            throw new Error("Connection was approved, but no accounts were found.");
+        }
+
     } catch (error) {
         console.error("Failed to connect to Sui wallet:", error);
         alert("Failed to connect wallet. See console for details.");
-        setIsSuiModalOpen(false);
     }
   };
 
   const handleDisconnect = async () => {
-    if (activeNetwork === Network.SUI) {
-      const walletsApi = getWallets();
-      const connectedWallet = walletsApi.get().find(w => w.accounts.some(a => a.address === address));
-      if (connectedWallet && connectedWallet.features['sui:disconnect']) {
-        await connectedWallet.features['sui:disconnect'].disconnect();
-      }
+    if (activeNetwork === Network.SUI && suiWallet) {
+        const disconnectFeature = suiWallet.features['sui:disconnect'];
+        if (disconnectFeature) {
+            await disconnectFeature.disconnect();
+        }
+        setSuiWallet(null);
     } else if (activeNetwork === Network.EVM && web3Modal) {
       await web3Modal.disconnect();
     }
@@ -129,7 +162,7 @@ const App: React.FC = () => {
 
       <header className="p-4 border-b border-white/10 bg-base-900/50 backdrop-blur-xl sticky top-0 z-50">
         <div className="container mx-auto flex justify-between items-center">
-          <button onClick={() => { setActiveNetwork(null); handleDisconnect(); }} className="text-xl font-bold flex items-center gap-3 group">
+          <button onClick={() => { setActiveNetwork(null); if (isConnected) handleDisconnect(); }} className="text-xl font-bold flex items-center gap-3 group">
             <span className="text-xl bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 group-hover:from-white group-hover:to-white transition-all">DeFi Hub</span>
             {currentDisplay && (
               <span className={`px-2 py-1 rounded text-xs ${networkTagStyles[currentDisplay.color]}`}>
@@ -141,7 +174,7 @@ const App: React.FC = () => {
             {(Object.keys(networkConfig) as Network[]).map((network) => (
               <button
                 key={network}
-                onClick={() => { setActiveNetwork(network); handleDisconnect(); }}
+                onClick={() => { if (activeNetwork !== network) { handleDisconnect(); } setActiveNetwork(network); }}
                 title={networkConfig[network].name}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold transition-all duration-300 ${
                   activeNetwork === network
@@ -165,7 +198,7 @@ const App: React.FC = () => {
       </header>
       <main>
         {activeNetwork === null ? (
-          <HomePage onNavigateToDashboard={(network) => { setActiveNetwork(network); handleDisconnect(); }} />
+          <HomePage onNavigateToDashboard={(network) => { setActiveNetwork(network); }} />
         ) : (
           <div className="container mx-auto p-4 sm:p-6 lg:p-8">
             {currentDisplay?.component}
