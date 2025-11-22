@@ -1,10 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { Network } from './types';
 import SuiDashboard from './features/sui/SuiDashboard';
-import IotaDashboard from './features/iota/IotaDashboard';
 import EvmDashboard from './features/evm/EvmDashboard';
 import ConnectWalletButton from './components/ConnectWalletButton';
-import { SuiLogo, IotaLogo, BerachainLogo } from './components/icons/ChainLogos';
+import { SuiLogo, BerachainLogo } from './components/icons/ChainLogos';
 import HomePage from './HomePage';
 
 const App: React.FC = () => {
@@ -19,13 +18,6 @@ const App: React.FC = () => {
       logo: <SuiLogo className="h-6 w-6" />,
       color: 'sui-blue',
       aurora: 'bg-sui-blue/30',
-    },
-    [Network.IOTA]: {
-      name: 'Iota',
-      component: <IotaDashboard isConnected={isConnected} address={address} />,
-      logo: <IotaLogo className="h-6 w-6" />,
-      color: 'iota-green',
-      aurora: 'bg-iota-green/30',
     },
     [Network.EVM]: {
       name: 'EVM / Web3',

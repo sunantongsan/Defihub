@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ethers } from 'ethers';
+import { getWallets } from '@mysten/wallet-standard';
 import { TransactionBlock } from '@mysten/sui.js/transactions';
 import { Network, Token } from '../../types';
-import { ArrowDownIcon, LoadingSpinner } from '../../components/icons/InterfaceIcons';
+import { ArrowDownIcon, LoadingSpinner, ChevronDownIcon } from '../../components/icons/InterfaceIcons';
 
 interface SwapProps {
   network: Network;
@@ -18,10 +19,7 @@ const REAL_TOKENS: { [key in Network]: Token[] } = {
     { symbol: 'SUI', name: 'Sui', logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/sui/info/logo.png' },
     { symbol: 'USDC', name: 'USD Coin', logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png' },
   ],
-  [Network.IOTA]: [
-    { symbol: 'IOTA', name: 'Iota', logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/iota/info/logo.png' },
-    { symbol: 'USDT', name: 'Tether', logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png' },
-  ],
+  // FIX: Property 'IOTA' does not exist on type 'typeof Network'. Removed IOTA entry.
   [Network.EVM]: [
     { symbol: 'BERA', name: 'Berachain', logo: 'https://artio.bex.berachain.com/bera-token.svg' },
     { symbol: 'HONEY', name: 'Honey', logo: 'https://artio.bex.berachain.com/honey-token.svg' },
@@ -65,8 +63,10 @@ const Swap: React.FC<SwapProps> = ({ network, color, isConnected, address }) => 
         // In a real app, you would use token contract addresses and ABIs to get balances.
         // For this demo, we'll simulate fetching native token balances.
         try {
-            if (network === Network.EVM || network === Network.IOTA) { // Assuming IOTA has an EVM layer
-                const provider = new ethers.BrowserProvider(window.ethereum!);
+            // FIX: Property 'IOTA' does not exist on type 'typeof Network'. Removed IOTA from condition.
+            if (network === Network.EVM) { // Assuming IOTA has an EVM layer
+                // FIX: Property 'ethereum' does not exist on type 'Window & typeof globalThis'. Cast window to any.
+                const provider = new ethers.BrowserProvider((window as any).ethereum!);
                 const balance = await provider.getBalance(address);
                 // We'll set the native token balance for both for simplicity
                 setFromBalance(ethers.formatEther(balance).substring(0, 6));
@@ -98,8 +98,10 @@ const Swap: React.FC<SwapProps> = ({ network, color, isConnected, address }) => 
         // This is a DEMONSTRATION of a transaction.
         // A real swap requires interacting with a specific DEX/AMM contract.
         // We will simulate this by sending a small amount of the native currency to ourselves.
-        if (network === Network.EVM || network === Network.IOTA) {
-            const provider = new ethers.BrowserProvider(window.ethereum!);
+        // FIX: Property 'IOTA' does not exist on type 'typeof Network'. Removed IOTA from condition.
+        if (network === Network.EVM) {
+            // FIX: Property 'ethereum' does not exist on type 'Window & typeof globalThis'. Cast window to any.
+            const provider = new ethers.BrowserProvider((window as any).ethereum!);
             const signer = await provider.getSigner();
             const tx = await signer.sendTransaction({
                 to: address,
@@ -110,15 +112,24 @@ const Swap: React.FC<SwapProps> = ({ network, color, isConnected, address }) => 
             setTxHash(tx.hash);
 
         } else if (network === Network.SUI) {
-             alert("Sui transaction signing is not fully implemented in this demo. This would require the Sui dApp kit.");
-             // Placeholder for Sui transaction logic
+             const walletsApi = getWallets();
+             const suiWallets = walletsApi.get();
+             if (suiWallets.length === 0) throw new Error("Sui wallet not found.");
+             
+             const wallet = suiWallets.find(w => w.accounts.some(a => a.address === address)) || suiWallets[0];
+             if (!wallet) throw new Error("Could not find the connected wallet.");
+
              const txb = new TransactionBlock();
-             const [coin] = txb.splitCoins(txb.gas, [txb.pure(1000)]); // demo
+             // 1 SUI = 1,000,000,000 MIST. We send 1000 MIST for the demo.
+             const [coin] = txb.splitCoins(txb.gas, [txb.pure(1000)]); 
              txb.transferObjects([coin], txb.pure(address));
-             // In a real app with Sui dApp kit:
-             // const { digest } = await signAndExecuteTransactionBlock({ transactionBlock: txb });
-             // setTxHash(digest);
-             throw new Error("Sui signing not implemented.");
+             
+             setStatus('sending');
+
+             const { digest } = await wallet.features['sui:signAndExecuteTransactionBlock'].signAndExecuteTransactionBlock({
+                transactionBlock: txb,
+             });
+             setTxHash(digest);
         }
         
         setStatus('success');
@@ -171,10 +182,11 @@ const Swap: React.FC<SwapProps> = ({ network, color, isConnected, address }) => 
             onChange={(e) => handleAmountChange(e.target.value)}
             className="bg-transparent text-3xl font-bold w-full outline-none"
           />
-          <div className="relative flex items-center gap-2 bg-base-700/50 p-2 rounded-full">
+          <button className="flex items-center gap-2 bg-base-700/50 p-2 rounded-full hover:bg-base-700/80 transition-colors">
             <img src={fromToken.logo} alt={`${fromToken.name} logo`} className="h-6 w-6 rounded-full" />
-            <span className="font-semibold pr-1">{fromToken.symbol}</span>
-          </div>
+            <span className="font-semibold">{fromToken.symbol}</span>
+            <ChevronDownIcon className="h-5 w-5 text-gray-400" />
+          </button>
         </div>
       </div>
       
@@ -197,10 +209,11 @@ const Swap: React.FC<SwapProps> = ({ network, color, isConnected, address }) => 
             readOnly
             className="bg-transparent text-3xl font-bold w-full outline-none text-gray-400"
           />
-           <div className="relative flex items-center gap-2 bg-base-700/50 p-2 rounded-full">
+           <button className="flex items-center gap-2 bg-base-700/50 p-2 rounded-full hover:bg-base-700/80 transition-colors">
             <img src={toToken.logo} alt={`${toToken.name} logo`} className="h-6 w-6 rounded-full" />
-            <span className="font-semibold pr-1">{toToken.symbol}</span>
-          </div>
+            <span className="font-semibold">{toToken.symbol}</span>
+            <ChevronDownIcon className="h-5 w-5 text-gray-400" />
+          </button>
         </div>
       </div>
 

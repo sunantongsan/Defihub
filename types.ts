@@ -1,7 +1,6 @@
 
 export enum Network {
   SUI = 'SUI',
-  IOTA = 'IOTA',
   EVM = 'EVM',
 }
 

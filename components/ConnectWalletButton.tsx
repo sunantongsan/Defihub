@@ -1,23 +1,57 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useCallback } from 'react';
+import { getWallets } from '@mysten/wallet-standard';
+import { createWeb3Modal, defaultConfig } from '@web3modal/ethers';
 import { WalletIcon, LogoutIcon } from './icons/InterfaceIcons';
 import { Network } from '../types';
 
-// Extend window interface to include common wallet providers
-declare global {
-  interface Window {
-    ethereum?: {
-        request: (args: { method: string }) => Promise<string[]>;
-    };
-    // FIX: Merged suiWallet type definitions to avoid conflicts across files and to include all necessary methods. This resolves the type error on line 11 and the property access error on line 54.
-    suiWallet?: {
-      request: (args: { method: string }) => Promise<{ accounts: string[] }>;
-      signAndExecuteTransactionBlock: (payload: { transactionBlock: any }) => Promise<{ digest: string }>;
-    };
-    iotaWallet?: {
-        request: (args: { method: string }) => Promise<{ accounts: string[] }>;
-    };
-  }
+// 1. Get a project ID from https://cloud.walletconnect.com
+const projectId = 'YOUR_WALLETCONNECT_PROJECT_ID'; // <-- IMPORTANT: REPLACE THIS
+
+// --- Conditionally initialize Web3Modal ---
+let web3Modal: ReturnType<typeof createWeb3Modal> | undefined;
+const isEvmConfigured = projectId && projectId !== 'YOUR_WALLETCONNECT_PROJECT_ID';
+
+if (isEvmConfigured) {
+  // 2. Set chains
+  const mainnet = {
+    chainId: 1,
+    name: 'Ethereum',
+    currency: 'ETH',
+    explorerUrl: 'https://etherscan.io',
+    rpcUrl: 'https://cloudflare-eth.com'
+  };
+
+  const berachainTestnet = {
+      chainId: 80085,
+      name: 'Berachain Artio',
+      currency: 'BERA',
+      explorerUrl: 'https://artio.beratrail.io',
+      rpcUrl: 'https://artio.rpc.berachain.com/'
+  };
+
+  // 3. Create modal config
+  const metadata = {
+    name: 'DeFi Multi-Chain Hub',
+    description: 'A cutting-edge DeFi Hub for multiple blockchains.',
+    url: 'https://defihub-phi.vercel.app/', // origin must match your domain & subdomain
+    icons: ['https://avatars.githubusercontent.com/u/37784886']
+  };
+
+  const ethersConfig = defaultConfig({
+    metadata,
+    defaultChainId: 1,
+    rpcUrl: 'https://cloudflare-eth.com',
+  });
+
+  web3Modal = createWeb3Modal({
+    ethersConfig,
+    chains: [mainnet, berachainTestnet],
+    projectId,
+    enableAnalytics: false // Optional - defaults to your Cloud configuration
+  });
 }
+// --- End of Conditional Initialization ---
+
 
 interface ConnectWalletButtonProps {
     activeNetwork: Network | null;
@@ -29,83 +63,60 @@ interface ConnectWalletButtonProps {
 
 const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({ activeNetwork, address, color, onConnect, onDisconnect }) => {
   const isConnected = !!address;
-  const [isSuiWalletDetected, setIsSuiWalletDetected] = useState(false);
   
+  const handleDisconnectCallback = useCallback(onDisconnect, []);
+
+  // Subscribe to Web3Modal address changes
+  useEffect(() => {
+    if (!web3Modal) return; // Do nothing if modal is not configured
+
+    const unsubscribe = web3Modal.subscribeProvider( (newState) => {
+        if(newState.address && activeNetwork === Network.EVM) {
+            onConnect(newState.address);
+        } else {
+             handleDisconnectCallback();
+        }
+    });
+    return () => unsubscribe();
+  }, [activeNetwork, onConnect, handleDisconnectCallback]);
+
+
   useEffect(() => {
     // Disconnect when network changes to ensure user connects with the right wallet for the new network
-    onDisconnect();
-    setIsSuiWalletDetected(false); // Also reset detection status
-  }, [activeNetwork, onDisconnect]);
+    handleDisconnectCallback();
+  }, [activeNetwork, handleDisconnectCallback]);
 
-  // More robust Sui wallet detection to handle the race condition.
-  // Instead of a single timeout, we poll for the wallet provider.
-  useEffect(() => {
-    if (activeNetwork !== Network.SUI) {
-      return;
-    }
-
-    // Immediately check if the wallet is already available
-    if (window.suiWallet) {
-      setIsSuiWalletDetected(true);
-      return;
-    }
-
-    // If not found, poll for a short period to give the extension time to inject.
-    let attempts = 0;
-    const interval = setInterval(() => {
-      if (window.suiWallet) {
-        setIsSuiWalletDetected(true);
-        clearInterval(interval);
-      } else if (attempts >= 10) { // Poll for ~2 seconds (10 * 200ms)
-        clearInterval(interval);
-      }
-      attempts++;
-    }, 200);
-
-    // Cleanup function to clear the interval when the component unmounts or network changes
-    return () => clearInterval(interval);
-
-  }, [activeNetwork]);
-
+  // Check if the configuration is missing for the EVM network.
+  const isEvmConfigMissing = activeNetwork === Network.EVM && !isEvmConfigured;
 
   const handleConnect = async () => {
-    if (!activeNetwork) {
-      alert("Please select a network first.");
+    if (!activeNetwork || (activeNetwork === Network.EVM && !isEvmConfigured)) {
       return;
     }
 
     try {
-      let accounts: string[] | undefined;
-      switch (activeNetwork) {
-        case Network.EVM: // EVM Compatible
-          if (window.ethereum) {
-            accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-          } else {
-            alert("Please install MetaMask or another EVM-compatible wallet.");
-          }
-          break;
-        case Network.SUI:
-          if (isSuiWalletDetected && window.suiWallet) {
-            const res = await window.suiWallet.request({ method: 'sui_requestAccounts' });
-            accounts = res.accounts;
-          } else {
-            alert("Sui wallet not detected. Please ensure it is installed and enabled in your browser.");
-          }
-          break;
-        case Network.IOTA:
-           if (window.iotaWallet) {
-            const res = await window.iotaWallet.request({ method: 'iota_requestAccounts' });
-            accounts = res.accounts;
-          } else {
-            alert("Please install an IOTA-compatible wallet like TanglePay.");
-          }
-          break;
-        default:
-          alert("Selected network does not have wallet integration specified.");
-      }
+      if (activeNetwork === Network.EVM) {
+        if (web3Modal) {
+          await web3Modal.open();
+        } else {
+           console.error("Web3Modal is not configured. A valid projectId is required.");
+           alert("SETUP REQUIRED: Please get your free projectId from https://cloud.walletconnect.com and add it to the 'components/ConnectWalletButton.tsx' file.");
+        }
+      } else if (activeNetwork === Network.SUI) {
+        const walletsApi = getWallets();
+        const suiWallets = walletsApi.get();
+        
+        if (suiWallets.length === 0) {
+            alert("Sui wallet not detected. Please ensure it's installed and enabled in your browser.");
+            return;
+        }
 
-      if (accounts && accounts.length > 0) {
-        onConnect(accounts[0]);
+        const wallet = suiWallets[0];
+        await wallet.features['sui:connect'].connect();
+        const accounts = wallet.accounts.map(acc => acc.address);
+        if (accounts && accounts.length > 0) {
+          onConnect(accounts[0]);
+        }
       }
 
     } catch (error) {
@@ -114,7 +125,18 @@ const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({ activeNetwork
     }
   };
 
-  const handleDisconnect = () => {
+  const handleDisconnect = async () => {
+    if(activeNetwork === Network.SUI) {
+      const walletsApi = getWallets();
+      const suiWallets = walletsApi.get();
+      if (suiWallets.length > 0 && suiWallets[0].features['sui:disconnect']) {
+        await suiWallets[0].features['sui:disconnect'].disconnect();
+      }
+    } else if (activeNetwork === Network.EVM) {
+      if (web3Modal) {
+        await web3Modal.disconnect();
+      }
+    }
     onDisconnect();
   };
 
@@ -122,24 +144,34 @@ const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({ activeNetwork
   
   const colorClasses: { [key: string]: string } = {
     'sui-blue': 'from-sui-blue to-blue-400 hover:from-sui-blue/90 hover:to-blue-400/90',
-    'iota-green': 'from-iota-green to-teal-400 hover:from-iota-green/90 hover:to-teal-400/90',
     'berachain-orange': 'from-berachain-orange to-orange-400 hover:from-berachain-orange/90 hover:to-orange-400/90',
     'theme-yellow': 'from-theme-yellow to-amber-400 hover:from-theme-yellow/90 hover:to-amber-400/90'
   };
 
   const buttonClass = colorClasses[color] || colorClasses['theme-yellow'];
 
+  // Determine button text and title based on state
+  let buttonText = "Connect Wallet";
+  let buttonTitle = "Connect your wallet to the selected network";
+  
+  if (!activeNetwork) {
+    buttonTitle = "Select a network first";
+  } else if (isEvmConfigMissing) {
+    buttonText = "Setup Required";
+    buttonTitle = "Configuration Required: Please get your free projectId from cloud.walletconnect.com and add it to the ConnectWalletButton.tsx file.";
+  }
+
   return (
     <div>
       {!isConnected ? (
         <button
           onClick={handleConnect}
-          disabled={!activeNetwork}
+          disabled={!activeNetwork || isEvmConfigMissing}
           className={`flex items-center gap-2 bg-gradient-to-r ${buttonClass} text-white font-bold py-2 px-4 rounded-full transition-all duration-300 transform hover:scale-105 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed disabled:scale-100`}
-          title={!activeNetwork ? "Select a network to connect" : "Connect Wallet"}
+          title={buttonTitle}
         >
           <WalletIcon className="h-5 w-5" />
-          <span>Connect Wallet</span>
+          <span>{buttonText}</span>
         </button>
       ) : (
         <div className="flex items-center gap-3 bg-base-800/80 border border-white/10 rounded-full p-1">

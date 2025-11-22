@@ -1,19 +1,10 @@
-
 import React from 'react';
 import { useState } from 'react';
+import { getWallets } from '@mysten/wallet-standard';
 import { Network } from '../../types';
 import { LoadingSpinner, ChevronDownIcon } from '../../components/icons/InterfaceIcons';
 import { TransactionBlock } from '@mysten/sui.js/transactions';
 
-// Extend window interface for Sui wallet
-declare global {
-  interface Window {
-    suiWallet?: {
-      request: (args: { method: string; }) => Promise<{ accounts: string[]; }>;
-      signAndExecuteTransactionBlock: (payload: { transactionBlock: any }) => Promise<{ digest: string }>;
-    };
-  }
-}
 
 interface MintProps {
   network: Network;
@@ -52,6 +43,17 @@ const Mint: React.FC<MintProps> = ({ network, color, isConnected, address }) => 
     const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files[0]) {
             const file = event.target.files[0];
+
+            if (file.size > 1 * 1024 * 1024) { // 1MB limit
+                setError("Image file size should be less than 1MB.");
+                // Clear the input
+                event.target.value = ''; 
+                setImagePreview(null);
+                setImageUrl('');
+                return;
+            }
+            setError('');
+
             // In a real app, you'd upload this to IPFS/Arweave and get a permanent URL
             const tempUrl = URL.createObjectURL(file); 
             setImageUrl(tempUrl);
@@ -63,6 +65,14 @@ const Mint: React.FC<MintProps> = ({ network, color, isConnected, address }) => 
             reader.readAsDataURL(file);
         }
     };
+
+    const removeImage = () => {
+        setImagePreview(null);
+        setImageUrl('');
+        // Also clear the file input for consistency
+        const fileInput = document.getElementById('image-upload') as HTMLInputElement;
+        if(fileInput) fileInput.value = '';
+    }
 
     const handleMint = async () => {
         if (!isConnected || !address || !name || !symbol || !supply || !decimals) return;
@@ -77,8 +87,15 @@ const Mint: React.FC<MintProps> = ({ network, color, isConnected, address }) => 
         setError('');
 
         try {
-            if (!window.suiWallet) {
+            const walletsApi = getWallets();
+            const suiWallets = walletsApi.get();
+            if (suiWallets.length === 0) {
                 throw new Error("Sui wallet not found.");
+            }
+            const wallet = suiWallets.find(w => w.accounts.some(a => a.address === address)) || suiWallets[0];
+
+            if (!wallet) {
+                throw new Error("Could not find the connected wallet.");
             }
             
             // This is now the REAL logic for creating a coin via a smart contract.
@@ -101,7 +118,7 @@ const Mint: React.FC<MintProps> = ({ network, color, isConnected, address }) => 
             
             setStatus('sending');
 
-            const { digest } = await window.suiWallet.signAndExecuteTransactionBlock({
+            const { digest } = await wallet.features['sui:signAndExecuteTransactionBlock'].signAndExecuteTransactionBlock({
                 transactionBlock: txb,
             });
             
@@ -113,14 +130,17 @@ const Mint: React.FC<MintProps> = ({ network, color, isConnected, address }) => 
         } catch (err: any) {
             console.error("Minting failed:", err);
             const errorMessage = err.message || 'An unknown error occurred.';
+            
             if (errorMessage.includes('User rejected')) {
-                setError('Transaction rejected. Please click "Mint Token" again to approve the transaction.');
+                setError('Transaction Rejected. You cancelled the request in your wallet. Please try again when you are ready to approve.');
             } else if (errorMessage.includes('GasBalanceTooLow')) {
-                setError('Insufficient Gas. You do not have enough SUI in your wallet to pay for the transaction fees.');
+                setError('Insufficient Gas. You do not have enough SUI for transaction fees. Please add SUI to your wallet and try again.');
             } else if (errorMessage.includes('MoveAbort')) {
-                setError('Transaction failed: A condition in the smart contract was not met. Please double-check your inputs (e.g., supply, decimals) and try again.');
+                setError('Invalid Parameters. The smart contract rejected the transaction. Please double-check all inputs (e.g., supply cannot be zero) and try again.');
+            } else if (errorMessage.includes('Failed to fetch') || errorMessage.includes('timeout')) {
+                setError('Network Error. Could not connect to the Sui network. Please check your internet connection and try again.');
             } else {
-                setError(`Transaction failed: ${errorMessage.substring(0, 100)}...`);
+                setError('An unexpected error occurred. Please try again. If the problem persists, check the console for more details.');
             }
             setStatus('error');
         }
@@ -176,7 +196,12 @@ const Mint: React.FC<MintProps> = ({ network, color, isConnected, address }) => 
                                     Logo
                                 </div>
                             )}
-                            <input type="file" accept="image/*" onChange={handleImageUpload} className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sui-blue/20 file:text-sui-blue hover:file:bg-sui-blue/30"/>
+                            <div className='flex-grow'>
+                                <input id="image-upload" type="file" accept="image/*" onChange={handleImageUpload} className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sui-blue/20 file:text-sui-blue hover:file:bg-sui-blue/30"/>
+                                {imagePreview && (
+                                     <button onClick={removeImage} className="text-xs text-red-400 hover:text-red-500 mt-2">Remove</button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
