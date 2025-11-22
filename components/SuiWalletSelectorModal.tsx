@@ -1,30 +1,26 @@
-import React, { useEffect, useState } from 'react';
-import { getWallets, Wallet } from '@mysten/wallet-standard';
+import React from 'react';
+import { useWallet } from '@suiet/wallet-kit';
 import { CloseIcon } from './icons/InterfaceIcons';
 
 interface SuiWalletSelectorModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectWallet: (walletName: string) => void;
 }
 
-const SuiWalletSelectorModal: React.FC<SuiWalletSelectorModalProps> = ({ isOpen, onClose, onSelectWallet }) => {
-  const [suiWallets, setSuiWallets] = useState<readonly Wallet[]>([]);
+const SuiWalletSelectorModal: React.FC<SuiWalletSelectorModalProps> = ({ isOpen, onClose }) => {
+  const { wallets, select, connecting, connected } = useWallet();
 
-  useEffect(() => {
-    if (isOpen) {
-      const walletsApi = getWallets();
-      const detectedWallets = walletsApi.get();
-      setSuiWallets(detectedWallets);
-      
-      // It's good practice to also listen for changes
-      const unsubscribe = walletsApi.on('change', () => {
-        setSuiWallets(walletsApi.get());
-      });
-
-      return () => unsubscribe();
+  const handleSelectWallet = async (walletName: string) => {
+    try {
+      if (!connected) {
+        await select(walletName);
+      }
+      onClose();
+    } catch (error) {
+      console.error('Failed to select and connect wallet', error);
+      alert('Failed to connect wallet. See console for details.');
     }
-  }, [isOpen]);
+  };
 
   if (!isOpen) {
     return null;
@@ -43,16 +39,20 @@ const SuiWalletSelectorModal: React.FC<SuiWalletSelectorModalProps> = ({ isOpen,
           </button>
         </div>
         <div className="p-2">
-          {suiWallets.length > 0 ? (
+          {wallets.length > 0 ? (
             <ul className="space-y-1">
-              {suiWallets.map((wallet) => (
+              {wallets.map((wallet) => (
                 <li key={wallet.name}>
                   <button
-                    onClick={() => onSelectWallet(wallet.name)}
-                    className="w-full flex items-center gap-4 p-3 rounded-lg hover:bg-base-700/50 transition-colors text-left"
+                    onClick={() => handleSelectWallet(wallet.name)}
+                    disabled={connecting}
+                    className="w-full flex items-center gap-4 p-3 rounded-lg hover:bg-base-700/50 transition-colors text-left disabled:opacity-50"
                   >
                     <img src={wallet.icon} alt={`${wallet.name} logo`} className="h-8 w-8 rounded-full" />
                     <span className="font-semibold text-white">{wallet.name}</span>
+                    {connecting && wallet.name === wallets.find(w => w.name === wallet.name)?.name && 
+                        <span className="text-xs text-gray-400 ml-auto">Connecting...</span>
+                    }
                   </button>
                 </li>
               ))}

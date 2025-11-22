@@ -1,6 +1,6 @@
 import React from 'react';
 import { useState } from 'react';
-import { getWallets } from '@mysten/wallet-standard';
+import { useWallet } from '@suiet/wallet-kit';
 import { Network } from '../../types';
 import { LoadingSpinner, ChevronDownIcon } from '../../components/icons/InterfaceIcons';
 import { TransactionBlock } from '@mysten/sui.js/transactions';
@@ -39,6 +39,8 @@ const Mint: React.FC<MintProps> = ({ network, color, isConnected, address }) => 
     const [status, setStatus] = useState<'idle' | 'signing' | 'sending' | 'success' | 'error'>('idle');
     const [txDigest, setTxDigest] = useState('');
     const [error, setError] = useState('');
+
+    const { signAndExecuteTransactionBlock } = useWallet();
 
     const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files[0]) {
@@ -87,15 +89,8 @@ const Mint: React.FC<MintProps> = ({ network, color, isConnected, address }) => 
         setError('');
 
         try {
-            const walletsApi = getWallets();
-            const suiWallets = walletsApi.get();
-            if (suiWallets.length === 0) {
-                throw new Error("Sui wallet not found.");
-            }
-            const wallet = suiWallets.find(w => w.accounts.some(a => a.address === address)) || suiWallets[0];
-
-            if (!wallet) {
-                throw new Error("Could not find the connected wallet.");
+            if (!signAndExecuteTransactionBlock) {
+                throw new Error("Wallet does not support signing transactions.");
             }
             
             // This is now the REAL logic for creating a coin via a smart contract.
@@ -118,7 +113,7 @@ const Mint: React.FC<MintProps> = ({ network, color, isConnected, address }) => 
             
             setStatus('sending');
 
-            const { digest } = await wallet.features['sui:signAndExecuteTransactionBlock'].signAndExecuteTransactionBlock({
+            const { digest } = await signAndExecuteTransactionBlock({
                 transactionBlock: txb,
             });
             

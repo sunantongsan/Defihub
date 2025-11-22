@@ -10,17 +10,21 @@ interface ProjectCardProps {
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, color, actionButton }) => {
     const progress = (project.raised / project.goal) * 100;
 
-    const statusTagClass: { [key: string]: string } = {
+    // FIX: Separated the object definition from the property access to resolve the type error.
+    const statusTagClasses: { [key: string]: string } = {
         'sui-blue': 'bg-sui-blue/20 text-sui-blue',
         'iota-green': 'bg-iota-green/20 text-iota-green',
         'berachain-orange': 'bg-berachain-orange/20 text-berachain-orange',
-    }[color] || '';
+    };
+    const statusTagClass = statusTagClasses[color] || '';
 
-    const progressBarClass: { [key: string]: string } = {
+    // FIX: Separated the object definition from the property access to resolve the type error.
+    const progressBarClasses: { [key: string]: string } = {
         'sui-blue': 'bg-sui-blue',
         'iota-green': 'bg-iota-green',
         'berachain-orange': 'bg-berachain-orange',
-    }[color] || 'bg-gray-500';
+    };
+    const progressBarClass = progressBarClasses[color] || 'bg-gray-500';
 
     return (
         <div className="bg-base-800/40 border border-white/10 rounded-2xl p-5 flex flex-col gap-4 transition-all duration-300 hover:scale-[1.02] hover:border-white/20 shadow-2xl shadow-black/20 backdrop-blur-lg shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]">

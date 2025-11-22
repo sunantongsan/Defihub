@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { Network } from './types';
 import SuiDashboard from './features/sui/SuiDashboard';
@@ -7,7 +8,7 @@ import ConnectWalletButton from './components/ConnectWalletButton';
 import SuiWalletSelectorModal from './components/SuiWalletSelectorModal';
 import { SuiLogo, IotaLogo, BerachainLogo } from './components/icons/ChainLogos';
 import HomePage from './HomePage';
-import { getWallets, Wallet } from '@mysten/wallet-standard';
+import { useWallet } from '@suiet/wallet-kit';
 import { createWeb3Modal, defaultConfig } from '@web3modal/ethers';
 
 // 1. Get a project ID from https://cloud.walletconnect.com
@@ -30,21 +31,20 @@ const App: React.FC = () => {
   const [activeNetwork, setActiveNetwork] = useState<Network | null>(null);
   const [address, setAddress] = useState<string | null>(null);
   const [isSuiModalOpen, setIsSuiModalOpen] = useState(false);
-  const [suiWallet, setSuiWallet] = useState<Wallet | null>(null);
+  
+  const suiKitWallet = useWallet();
   const isConnected = !!address;
 
-  // Auto-reconnect effect for Sui
+  // Sync App's global address state with the wallet kit's state when Sui is active
   useEffect(() => {
-    if (activeNetwork === Network.SUI && !suiWallet) {
-        const { get } = getWallets();
-        const wallets = get();
-        const connectedWallet = wallets.find(w => w.accounts.length > 0);
-        if (connectedWallet) {
-            setSuiWallet(connectedWallet);
-            setAddress(connectedWallet.accounts[0].address);
-        }
+    if (activeNetwork === Network.SUI) {
+      if (suiKitWallet.connected && suiKitWallet.account) {
+        setAddress(suiKitWallet.account.address);
+      } else {
+        setAddress(null);
+      }
     }
-  }, [activeNetwork, suiWallet]);
+  }, [suiKitWallet.connected, suiKitWallet.account, activeNetwork]);
 
 
   const handleConnect = async (network: Network) => {
@@ -69,55 +69,14 @@ const App: React.FC = () => {
       alert("Could not initiate wallet connection. See console for details.");
     }
   };
-  
-  const handleSuiSelectAndConnect = async (walletName: string) => {
-    setIsSuiModalOpen(false);
-    try {
-        const { get } = getWallets();
-        const wallets = get();
-        const wallet = wallets.find(w => w.name === walletName);
-
-        if (!wallet) {
-            throw new Error(`Wallet ${walletName} not found.`);
-        }
-
-        // Check if already connected
-        if (wallet.accounts.length > 0) {
-            setSuiWallet(wallet);
-            setAddress(wallet.accounts[0].address);
-            return;
-        }
-
-        const connectFeature = wallet.features['sui:connect'];
-        if (!connectFeature) {
-             throw new Error(`The selected wallet "${wallet.name}" does not support the required connection standard.`);
-        }
-
-        // Use the modern, correct connection method that returns accounts.
-        const { accounts } = await connectFeature.connect();
-
-        if (accounts && accounts.length > 0) {
-            setSuiWallet(wallet);
-            setAddress(accounts[0].address);
-        } else {
-            throw new Error("Connection was approved, but no accounts were found.");
-        }
-
-    } catch (error) {
-        console.error("Failed to connect to Sui wallet:", error);
-        alert("Failed to connect wallet. See console for details.");
-    }
-  };
 
   const handleDisconnect = async () => {
-    if (activeNetwork === Network.SUI && suiWallet) {
-        const disconnectFeature = suiWallet.features['sui:disconnect'];
-        if (disconnectFeature) {
-            await disconnectFeature.disconnect();
-        }
-        setSuiWallet(null);
+    if (activeNetwork === Network.SUI && suiKitWallet.connected) {
+        await suiKitWallet.disconnect();
     } else if (activeNetwork === Network.EVM && web3Modal) {
-      await web3Modal.disconnect();
+      // FIX: The type inference for web3Modal is incorrect and does not include the 'disconnect' method.
+      // Using type assertion to bypass the TypeScript error as this is the correct method according to the library's documentation.
+      await (web3Modal as any).disconnect();
     }
     setAddress(null);
   };
@@ -147,7 +106,6 @@ const App: React.FC = () => {
     <SuiWalletSelectorModal
         isOpen={isSuiModalOpen}
         onClose={() => setIsSuiModalOpen(false)}
-        onSelectWallet={handleSuiSelectAndConnect}
     />
     <div className="relative min-h-screen bg-base-900 font-mono overflow-x-hidden">
       <div className="absolute inset-0 -z-10 overflow-hidden">

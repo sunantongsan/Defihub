@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ethers } from 'ethers';
-import { getWallets } from '@mysten/wallet-standard';
+import { useWallet } from '@suiet/wallet-kit';
 import { TransactionBlock } from '@mysten/sui.js/transactions';
 import { Network, Token } from '../../types';
 import { ArrowDownIcon, LoadingSpinner, ChevronDownIcon } from '../../components/icons/InterfaceIcons';
@@ -46,6 +46,8 @@ const Swap: React.FC<SwapProps> = ({ network, color, isConnected, address }) => 
   const tokens = useMemo(() => REAL_TOKENS[network], [network]);
   const [fromToken, setFromToken] = useState<Token>(tokens[0]);
   const [toToken, setToToken] = useState<Token>(tokens[1]);
+
+  const { signAndExecuteTransactionBlock: signAndExecuteSuiTx } = useWallet();
   
   // Reset state on network change
   useEffect(() => {
@@ -139,20 +141,16 @@ const Swap: React.FC<SwapProps> = ({ network, color, isConnected, address }) => 
             await tx.wait();
             setTxHash(tx.hash);
         } else if (network === Network.SUI) {
-             const walletsApi = getWallets();
-             const suiWallets = walletsApi.get();
-             if (suiWallets.length === 0) throw new Error("Sui wallet not found.");
-             
-             const wallet = suiWallets.find(w => w.accounts.some(a => a.address === address)) || suiWallets[0];
-             if (!wallet) throw new Error("Could not find the connected wallet.");
-
+             if (!signAndExecuteSuiTx) {
+                throw new Error("Sui wallet function not available.");
+             }
              const txb = new TransactionBlock();
              const [coin] = txb.splitCoins(txb.gas, [txb.pure(1000)]); 
              txb.transferObjects([coin], txb.pure(address));
              
              setStatus('sending');
 
-             const { digest } = await wallet.features['sui:signAndExecuteTransactionBlock'].signAndExecuteTransactionBlock({
+             const { digest } = await signAndExecuteSuiTx({
                 transactionBlock: txb,
              });
              setTxHash(digest);

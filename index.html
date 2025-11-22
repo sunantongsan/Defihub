@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DeFi Multi-Chain Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@suiet/wallet-kit@latest/dist/style.css"
+    />
     <script>
       tailwind.config = {
         theme: {
@@ -39,13 +43,15 @@
   "imports": {
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react-dom": "https://aistudiocdn.com/react-dom@^19.2.0",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "ethers": "https://aistudiocdn.com/ethers@^6.13.1",
-    "@mysten/sui.js": "https://aistudiocdn.com/@mysten/sui.js@^0.55.0",
-    "@mysten/sui.js/": "https://aistudiocdn.com/@mysten/sui.js@^0.54.1/",
-    "@mysten/wallet-standard": "https://aistudiocdn.com/@mysten/wallet-standard@^0.10.1",
-    "@web3modal/ethers": "https://aistudiocdn.com/@web3modal/ethers@^5.0.6"
+    "@mysten/sui/": "https://cdn.jsdelivr.net/npm/@mysten/sui@0.54.1/dist/esm/",
+    "@mysten/sui": "https://cdn.jsdelivr.net/npm/@mysten/sui@0.54.1/dist/esm/index.js",
+    "@suiet/wallet-kit": "https://cdn.jsdelivr.net/npm/@suiet/wallet-kit@latest/dist/index.js",
+    "@web3modal/ethers": "https://aistudiocdn.com/@web3modal/ethers@^5.0.6",
+    "@mysten/sui.js/": "https://aistudiocdn.com/@mysten/sui.js@^0.54.1/"
   }
 }
 </script>
